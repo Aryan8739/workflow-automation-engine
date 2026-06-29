@@ -1,7 +1,7 @@
-import { Queue  } from 'bullmq';
+import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
-// Ensure dotenv is loaded if run standalone
+
 import 'dotenv/config.js';
 
 const connection = new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null, family: 4 });
