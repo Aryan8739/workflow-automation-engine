@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+body {
+  @apply bg-[#080808] text-gray-100;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+code, pre {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes pulse-amber {
+  0%, 100% { background-color: #facc15; box-shadow: 0 0 0px #facc15; }
+  50% { background-color: #fef08a; box-shadow: 0 0 8px #facc15; }
+}
+
+.animate-pulse-amber {
+  animation: pulse-amber 1.5s infinite;
+}
+
+@keyframes flash-green {
+  0% { box-shadow: 0 0 15px #22c55e; background-color: #22c55e; }
+  100% { box-shadow: 0 0 0px transparent; background-color: #22c55e; }
+}
+
+.animate-flash-green {
+  animation: flash-green 1s ease-out forwards;
+}
