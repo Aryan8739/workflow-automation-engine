@@ -1,4 +1,4 @@
-import { Worker  } from 'bullmq';
+import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import Workflow from '../models/Workflow.js';
 import Run from '../models/Run.js';
@@ -14,7 +14,7 @@ connection.on('error', (err) => console.error('Redis connection error in runWork
 
 const runWorker = new Worker('runs', async (job) => {
   const { runId, workflowId } = job.data;
-  
+
   const run = await Run.findById(runId);
   if (!run) throw new Error('Run not found');
 
@@ -32,8 +32,8 @@ const runWorker = new Worker('runs', async (job) => {
 
   try {
     const sortedNodeIds = dagExecutor(workflow);
-    
-    // Quick lookup map for nodes
+
+    //lookup map for nodes
     const nodeMap = new Map();
     workflow.nodes.forEach(n => nodeMap.set(n.id, n));
 
@@ -46,10 +46,12 @@ const runWorker = new Worker('runs', async (job) => {
     run.status = 'completed';
     run.completedAt = new Date();
     await run.save();
+    socketEmitter.emit(runId, 'workflow-completed', { runId });
   } catch (error) {
     run.status = 'failed';
     run.completedAt = new Date();
     await run.save();
+    socketEmitter.emit(runId, 'workflow-failed', { runId, error: error.message });
     // Re-throw so BullMQ marks job as failed
     throw error;
   }

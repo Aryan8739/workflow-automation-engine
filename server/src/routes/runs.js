@@ -16,7 +16,8 @@ router.post('/:workflowId', async (req, res) => {
       runId: run._id,
       workflowId
     }, {
-      attempts: 1 // No job-level retries per spec
+      attempts: 1, // No job-level retries per spec
+      delay: 500
     });
 
     res.status(201).json(run);

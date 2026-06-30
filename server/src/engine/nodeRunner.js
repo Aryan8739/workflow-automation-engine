@@ -16,7 +16,7 @@ async function nodeRunner(node, inputData, runId, io) {
   }
 
   const startTime = Date.now();
-  
+
   let nodeLog = await NodeLog.create({
     runId,
     nodeId: node.id,
@@ -30,7 +30,7 @@ async function nodeRunner(node, inputData, runId, io) {
 
   try {
     const outputData = await handler(node.config, inputData);
-    
+
     const durationMs = Date.now() - startTime;
     nodeLog.status = 'done';
     nodeLog.output = outputData;
