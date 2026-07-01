@@ -11,6 +11,7 @@ const useWorkflowStore = create((set) => ({
   isRunning: false,
   logs: [],              // flat array of log events for LogDrawer
 
+
   setWorkflowId: (id) => set({ workflowId: id }),
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
@@ -19,6 +20,12 @@ const useWorkflowStore = create((set) => ({
   updateNodeConfig: (nodeId, config) => set((state) => ({
     nodes: state.nodes.map(node => 
       node.id === nodeId ? { ...node, data: { ...node.data, config: { ...node.data.config, ...config } } } : node
+    )
+  })),
+
+  updateNodeRetry: (nodeId, retry) => set((state) => ({
+    nodes: state.nodes.map(node => 
+      node.id === nodeId ? { ...node, data: { ...node.data, retry: { ...node.data.retry, ...retry } } } : node
     )
   })),
 
@@ -35,10 +42,11 @@ const useWorkflowStore = create((set) => ({
   })),
 
   setNodeLog: (nodeId, logData) => set((state) => ({
-    nodeLogs: { ...state.nodeLogs, [nodeId]: logData }
+    nodeLogs: { ...state.nodeLogs, [nodeId]: { ...(state.nodeLogs[nodeId] || {}), ...logData } }
   })),
 
   setIsRunning: (bool) => set({ isRunning: bool }),
+
   
   addLog: (logEntry) => set((state) => ({
     logs: [...state.logs, logEntry]

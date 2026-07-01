@@ -49,6 +49,12 @@ export default function RunPanel({ onToggleLogs }) {
           {overallStatus}
         </div>
         {activeRunId && <span className="text-xs text-gray-500 font-mono">{activeRunId}</span>}
+        
+        {activeRunId && (
+          <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] uppercase font-bold rounded-sm border border-blue-500/30 ml-2">
+            Live
+          </span>
+        )}
       </div>
 
       <div className="flex justify-center w-1/3">

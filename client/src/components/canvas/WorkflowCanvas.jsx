@@ -1,12 +1,14 @@
-import { useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   ReactFlow,
   MiniMap,
-  Controls,
   Background,
   useNodesState,
   useEdgesState,
   addEdge,
+  useViewport,
+  useReactFlow,
+  ReactFlowProvider
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -14,25 +16,81 @@ import HttpNode from './nodes/HttpNode';
 import TransformNode from './nodes/TransformNode';
 import DelayNode from './nodes/DelayNode';
 import useWorkflowStore from '../../store/workflowStore';
+import RunHistory from '../history/RunHistory';
 
-export default function WorkflowCanvas() {
+function ZoomCapsule() {
+  const { zoom } = useViewport();
+  const { zoomIn, zoomOut } = useReactFlow();
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '60px',
+        left: '20px',
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        borderRadius: '9999px',
+        backgroundColor: '#111',
+        border: '1px solid #333',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        fontSize: '12px',
+        fontWeight: 500,
+        color: '#e5e7eb',
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        onClick={() => zoomOut()}
+        style={{
+          padding: '6px 12px',
+          background: 'none',
+          border: 'none',
+          borderRight: '1px solid #333',
+          color: '#9ca3af',
+          cursor: 'pointer',
+          fontSize: '14px',
+          lineHeight: 1,
+        }}
+        onMouseEnter={(e) => { e.target.style.backgroundColor = '#2a2a2a'; e.target.style.color = '#fff'; }}
+        onMouseLeave={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#9ca3af'; }}
+      >
+        −
+      </button>
+      <div style={{ padding: '6px 12px', minWidth: '50px', textAlign: 'center' }}>
+        {Math.round(zoom * 100)}%
+      </div>
+      <button
+        onClick={() => zoomIn()}
+        style={{
+          padding: '6px 12px',
+          background: 'none',
+          border: 'none',
+          borderLeft: '1px solid #333',
+          color: '#9ca3af',
+          cursor: 'pointer',
+          fontSize: '14px',
+          lineHeight: 1,
+        }}
+        onMouseEnter={(e) => { e.target.style.backgroundColor = '#2a2a2a'; e.target.style.color = '#fff'; }}
+        onMouseLeave={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#9ca3af'; }}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+function WorkflowCanvasInner() {
   const { nodes, edges, setNodes, setEdges, setSelectedNodeId } = useWorkflowStore();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const nodeTypes = useMemo(() => ({
     http: HttpNode,
     transform: TransformNode,
     delay: DelayNode
   }), []);
-
-  const onNodesChange = useCallback((changes) => {
-    // React flow gives us changes. We manually apply them, 
-    // but typically useNodesState does this.
-    // For simplicity with Zustand, we can just map the changes or let React Flow handle it.
-    // However, to keep store sync simple, we'll recreate the applyChanges logic or 
-    // just rely on React Flow's onNodesChange callback pattern if we import it.
-    // Wait, the instructions say to update store + call saveWorkflow.
-    // The easiest way is to use `applyNodeChanges` and `applyEdgeChanges` from '@xyflow/react'
-  }, []);
 
   return (
     <div className="w-full h-full relative bg-[#080808]">
@@ -46,12 +104,18 @@ export default function WorkflowCanvas() {
         </div>
         <div className="flex space-x-2">
           <button 
+            onClick={() => setHistoryOpen(!historyOpen)}
+            className="border border-[#222] hover:border-gray-500 hover:bg-gray-500/10 text-gray-400 px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center mr-4"
+          >
+            History
+          </button>
+          <button 
             onClick={() => {
               const newNode = {
                 id: `node-${Date.now()}`,
                 type: 'http',
                 position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
-                data: { label: 'http', config: { method: 'GET', url: '' } }
+                data: { label: 'http', config: { method: 'GET', url: '' }, retry: { maxRetries: 2, retryDelayMs: 1000 } }
               };
               setNodes([...nodes, newNode]);
             }}
@@ -65,7 +129,7 @@ export default function WorkflowCanvas() {
                 id: `node-${Date.now()}`,
                 type: 'transform',
                 position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
-                data: { label: 'transform', config: { code: '' } }
+                data: { label: 'transform', config: { code: '' }, retry: { maxRetries: 2, retryDelayMs: 1000 } }
               };
               setNodes([...nodes, newNode]);
             }}
@@ -79,7 +143,7 @@ export default function WorkflowCanvas() {
                 id: `node-${Date.now()}`,
                 type: 'delay',
                 position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
-                data: { label: 'delay', config: { ms: 1000 } }
+                data: { label: 'delay', config: { ms: 1000 }, retry: { maxRetries: 2, retryDelayMs: 1000 } }
               };
               setNodes([...nodes, newNode]);
             }}
@@ -90,12 +154,11 @@ export default function WorkflowCanvas() {
         </div>
       </div>
 
-      <div className="pt-[52px] w-full h-full">
+      <div className="pt-[52px] w-full h-full relative">
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={(changes) => {
-            // Need to manually apply node changes to Zustand, or just use applyNodeChanges
             import('@xyflow/react').then(({ applyNodeChanges }) => {
               setNodes(applyNodeChanges(changes, nodes));
             });
@@ -105,14 +168,14 @@ export default function WorkflowCanvas() {
               setEdges(applyEdgeChanges(changes, edges));
             });
           }}
-          onConnect={(params) => setEdges(addEdge(params, edges))}
+          onConnect={(params) => setEdges(addEdge({ ...params, animated: true, style: { strokeDasharray: '4 4' } }, edges))}
           onPaneClick={() => setSelectedNodeId(null)}
           nodeTypes={nodeTypes}
+          defaultEdgeOptions={{ animated: true, style: { strokeDasharray: '4 4' } }}
           fitView
           className="bg-[#1a1a1a]"
         >
           <Background color="#2a2a2a" gap={24} size={1.5} />
-          <Controls className="!bg-[#1a1a1a] !border-[#333] !fill-gray-300" />
           <MiniMap 
             nodeColor={(node) => {
               switch (node.type) {
@@ -126,7 +189,20 @@ export default function WorkflowCanvas() {
             maskColor="rgba(0, 0, 0, 0.7)"
           />
         </ReactFlow>
+
+        {/* Zoom Capsule - positioned outside ReactFlow to avoid clipping */}
+        <ZoomCapsule />
+        
+        <RunHistory isOpen={historyOpen} onClose={() => setHistoryOpen(false)} />
       </div>
     </div>
+  );
+}
+
+export default function WorkflowCanvas() {
+  return (
+    <ReactFlowProvider>
+      <WorkflowCanvasInner />
+    </ReactFlowProvider>
   );
 }

@@ -24,7 +24,7 @@ export function useWorkflow() {
             id: n.id,
             type: n.type,
             position: n.position || { x: Math.random() * 200, y: Math.random() * 200 },
-            data: { label: n.type, config: n.config }
+            data: { label: n.type, config: n.config, retry: n.retry || { maxRetries: 2, retryDelayMs: 1000 } }
           }));
           
           const formattedEdges = (fullWf.data.edges || []).map((e, idx) => ({
@@ -63,7 +63,8 @@ export function useWorkflow() {
             id: n.id,
             type: n.type,
             position: n.position,
-            config: n.data?.config || {}
+            config: n.data?.config || {},
+            retry: n.data?.retry || { maxRetries: 2, retryDelayMs: 1000 }
           })),
           edges: newEdges.map(e => ({
             source: e.source,

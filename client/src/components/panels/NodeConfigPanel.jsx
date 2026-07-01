@@ -110,6 +110,32 @@ export default function NodeConfigPanel() {
             />
           </div>
         )}
+
+        {/* Retry Settings */}
+        <div className="pt-4 border-t border-[#1f1f1f] mt-4">
+          <label className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Max Retries</label>
+          <input
+            type="number"
+            min="0"
+            max="5"
+            value={data?.retry?.maxRetries ?? 2}
+            onChange={(e) => useWorkflowStore.getState().updateNodeRetry(selectedNodeId, { maxRetries: parseInt(e.target.value) ?? 2 })}
+            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2 py-1.5 text-[13px] font-mono focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]/30"
+          />
+        </div>
+        
+        {((data?.retry?.maxRetries ?? 2) > 0) && (
+          <div>
+            <label className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Retry Delay (ms)</label>
+            <input
+              type="number"
+              min="0"
+              value={data?.retry?.retryDelayMs || 1000}
+              onChange={(e) => useWorkflowStore.getState().updateNodeRetry(selectedNodeId, { retryDelayMs: parseInt(e.target.value) || 0 })}
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2 py-1.5 text-[13px] font-mono focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]/30"
+            />
+          </div>
+        )}
       </div>
 
       <div className="p-4 border-t border-[#1f1f1f] mt-auto">

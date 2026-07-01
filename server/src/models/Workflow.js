@@ -4,6 +4,10 @@ const nodeSchema = new mongoose.Schema({
   id: { type: String, required: true },
   type: { type: String, enum: ['http', 'transform', 'delay'], required: true },
   config: { type: mongoose.Schema.Types.Mixed, default: {} },
+  retry: {
+    maxRetries: { type: Number, default: 2 },
+    retryDelayMs: { type: Number, default: 1000 }
+  },
   position: {
     x: { type: Number, required: true, default: 0 },
     y: { type: Number, required: true, default: 0 }

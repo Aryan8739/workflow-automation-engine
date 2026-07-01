@@ -10,6 +10,8 @@ export function useRunSocket(runId) {
 
     const socket = io('http://localhost:5050');
 
+    // We can keep checkRunCompletion as a fallback for node events, 
+    // but the true source of completion will be workflow-completed/failed events
     const checkRunCompletion = () => {
       const state = useWorkflowStore.getState();
       const allCompleted = state.nodes.every(node => {
@@ -25,8 +27,23 @@ export function useRunSocket(runId) {
       socket.emit('joinRun', runId);
     });
 
+    socket.on('workflow-completed', () => {
+      setIsRunning(false);
+    });
+
+    socket.on('workflow-failed', () => {
+      setIsRunning(false);
+    });
+
     socket.on('nodeEvent', (data) => {
       setNodeStatus(data.nodeId, data.status);
+
+      if (data.status === 'retrying') {
+        setNodeLog(data.nodeId, {
+          attempt: data.attempt,
+          maxRetries: data.maxRetries
+        });
+      }
 
       if (data.status === 'done' || data.status === 'failed') {
         setNodeLog(data.nodeId, {
@@ -42,6 +59,8 @@ export function useRunSocket(runId) {
         output: data.output,
         error: data.error,
         durationMs: data.durationMs,
+        attempt: data.attempt,
+        maxRetries: data.maxRetries,
         timestamp: Date.now()
       });
 
