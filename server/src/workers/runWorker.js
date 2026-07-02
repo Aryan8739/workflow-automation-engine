@@ -1,16 +1,10 @@
 import { Worker } from 'bullmq';
-import IORedis from 'ioredis';
 import Workflow from '../models/Workflow.js';
 import Run from '../models/Run.js';
 import dagExecutor from '../engine/dagExecutor.js';
 import nodeRunner from '../engine/nodeRunner.js';
 import socketEmitter from '../socket/emitter.js';
-
-import 'dotenv/config.js';
-
-const connection = new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null, family: 4 });
-
-connection.on('error', (err) => console.error('Redis connection error in runWorker:', err));
+import connection from '../queues/connection.js';
 
 const runWorker = new Worker('runs', async (job) => {
   const { runId, workflowId } = job.data;

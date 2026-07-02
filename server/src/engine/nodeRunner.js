@@ -9,7 +9,7 @@ const handlers = {
   delay: delayHandler
 };
 
-async function nodeRunner(node, inputData, runId, io) {
+async function nodeRunner(node, inputData, runId, emitter) {
   const handler = handlers[node.type];
   if (!handler) {
     throw new Error(`Unknown node type: ${node.type}`);
@@ -24,9 +24,7 @@ async function nodeRunner(node, inputData, runId, io) {
     input: inputData
   });
 
-  if (io && io.emit) {
-    io.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'running' });
-  }
+  emitter.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'running' });
 
   let attempt = 0;
   const maxRetries = node.retry?.maxRetries ?? 2;
@@ -43,9 +41,7 @@ async function nodeRunner(node, inputData, runId, io) {
       nodeLog.attempts = attempt + 1;
       await nodeLog.save();
 
-      if (io && io.emit) {
-        io.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'done', output: outputData, durationMs });
-      }
+      emitter.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'done', output: outputData, durationMs });
 
       return outputData;
     } catch (error) {
@@ -59,15 +55,11 @@ async function nodeRunner(node, inputData, runId, io) {
         nodeLog.attempts = attempt;
         await nodeLog.save();
 
-        if (io && io.emit) {
-          io.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'failed', error: error.message, durationMs });
-        }
+        emitter.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'failed', error: error.message, durationMs });
 
         throw error;
       } else {
-        if (io && io.emit) {
-          io.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'retrying', attempt, maxRetries });
-        }
+        emitter.emit(runId, 'nodeEvent', { runId, nodeId: node.id, status: 'retrying', attempt, maxRetries });
         nodeLog.attempts = attempt;
         await nodeLog.save();
         
