@@ -42,7 +42,7 @@ export default function RunPanel({ onToggleLogs }) {
   }
 
   return (
-    <div className="w-full h-[56px] bg-[#090909] border-t border-[#1f1f1f] flex items-center justify-between px-6 z-20 absolute bottom-0 left-0">
+    <div className="w-full h-[56px] shrink-0 bg-[#090909] border-t border-[#1f1f1f] flex items-center justify-between px-6 relative z-10">
       <div className="flex items-center space-x-3 w-1/3">
         <span className="text-sm text-gray-400">Run Status:</span>
         <div className={`px-2 py-0.5 rounded text-xs font-bold text-white ${badgeColor}`}>
@@ -70,6 +70,7 @@ export default function RunPanel({ onToggleLogs }) {
 
       <div className="flex justify-end w-1/3">
         <button
+          type="button"
           onClick={onToggleLogs}
           className="px-4 py-1.5 text-xs font-medium text-gray-400 border border-transparent hover:border-[#222] hover:bg-[#1a1a1a] rounded-full transition"
         >
