@@ -14,9 +14,10 @@ import './workers/runWorker.js';
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: 'http://localhost:5173', methods: ['GET', 'POST'] } });
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+const io = new Server(server, { cors: { origin: allowedOrigin, methods: ['GET', 'POST'] } });
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: allowedOrigin, credentials: true }));
 app.use(express.json());
 
 // Routes

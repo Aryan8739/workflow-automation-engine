@@ -8,7 +8,7 @@ export function useRunSocket(runId) {
   useEffect(() => {
     if (!runId) return;
 
-    const socket = io('http://localhost:5050');
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5050');
 
     // We can keep checkRunCompletion as a fallback for node events, 
     // but the true source of completion will be workflow-completed/failed events

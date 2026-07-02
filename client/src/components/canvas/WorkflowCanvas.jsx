@@ -172,7 +172,7 @@ function WorkflowCanvasInner() {
           onPaneClick={() => setSelectedNodeId(null)}
           nodeTypes={nodeTypes}
           defaultEdgeOptions={{ animated: true, style: { strokeDasharray: '4 4' } }}
-          fitView
+          defaultViewport={{ x: 0, y: 60, zoom: 0.8 }}
           className="bg-[#1a1a1a]"
         >
           <Background color="#2a2a2a" gap={24} size={1.5} />
