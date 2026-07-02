@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../lib/api';
 import useWorkflowStore from '../store/workflowStore';
+import { toRFNode, toRFEdge, toApiNode, toApiEdge } from '../lib/workflowMap';
 
 export function useWorkflow() {
   const [loading, setLoading] = useState(true);
@@ -17,24 +18,9 @@ export function useWorkflow() {
           
           // Re-fetch the full workflow to get nodes and edges
           const fullWf = await api.get(`/workflows/${wf._id}`);
-          
-          // Map backend nodes config to React Flow expected format
-          // React flow expects data object to contain our custom properties
-          const formattedNodes = (fullWf.data.nodes || []).map(n => ({
-            id: n.id,
-            type: n.type,
-            position: n.position || { x: Math.random() * 200, y: Math.random() * 200 },
-            data: { label: n.type, config: n.config, retry: n.retry || { maxRetries: 2, retryDelayMs: 1000 } }
-          }));
-          
-          const formattedEdges = (fullWf.data.edges || []).map((e, idx) => ({
-            id: `e-${e.source}-${e.target}-${idx}`,
-            source: e.source,
-            target: e.target,
-          }));
 
-          setNodes(formattedNodes);
-          setEdges(formattedEdges);
+          setNodes((fullWf.data.nodes || []).map(toRFNode));
+          setEdges((fullWf.data.edges || []).map(toRFEdge));
         }
       } catch (err) {
         console.error('Failed to load workflow:', err);
@@ -59,17 +45,8 @@ export function useWorkflow() {
     timeoutRef.current = setTimeout(async () => {
       try {
         const payload = {
-          nodes: newNodes.map(n => ({
-            id: n.id,
-            type: n.type,
-            position: n.position,
-            config: n.data?.config || {},
-            retry: n.data?.retry || { maxRetries: 2, retryDelayMs: 1000 }
-          })),
-          edges: newEdges.map(e => ({
-            source: e.source,
-            target: e.target
-          }))
+          nodes: newNodes.map(toApiNode),
+          edges: newEdges.map(toApiEdge),
         };
         await api.put(`/workflows/${workflowId}`, payload);
         console.log('Workflow auto-saved');
