@@ -14,6 +14,7 @@ export const toRFEdge = (e, idx) => ({
   id: `e-${e.source}-${e.target}-${idx}`,
   source: e.source,
   target: e.target,
+  sourceHandle: e.sourceHandle ?? null,
 });
 
 export const toApiNode = (n) => ({
@@ -24,4 +25,4 @@ export const toApiNode = (n) => ({
   retry: n.data?.retry || { ...DEFAULT_RETRY },
 });
 
-export const toApiEdge = (e) => ({ source: e.source, target: e.target });
+export const toApiEdge = (e) => ({ source: e.source, target: e.target, sourceHandle: e.sourceHandle ?? null });

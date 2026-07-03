@@ -111,6 +111,19 @@ export default function NodeConfigPanel() {
           </div>
         )}
 
+        {type === 'condition' && (
+          <div>
+            <label className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Condition (JS expression)</label>
+            <textarea
+              value={config.expression || ''}
+              onChange={(e) => handleChange('expression', e.target.value)}
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2 py-1.5 text-[13px] font-mono focus:outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a]/30 h-24"
+              placeholder="input.data.age >= 18"
+            />
+            <p className="text-[10px] text-gray-500 mt-1.5">Truthy → <span className="text-[#16a34a]">true</span> branch, else <span className="text-gray-400">false</span> branch.</p>
+          </div>
+        )}
+
         {/* Retry Settings */}
         <div className="pt-4 border-t border-[#1f1f1f] mt-4">
           <label className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Max Retries</label>

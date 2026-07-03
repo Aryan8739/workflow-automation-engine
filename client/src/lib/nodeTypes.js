@@ -21,6 +21,16 @@ export const NODE_TYPES = {
     defaults: { ms: 1000 },
     summary: (config) => (config?.ms ? `${config.ms} ms` : '0 ms'),
   },
+  condition: {
+    accent: '#16a34a',
+    label: 'IF',
+    defaults: { expression: '' },
+    summary: (config) => (config?.expression ? `if (${config.expression})` : 'No condition'),
+    sourceHandles: [
+      { id: 'true', label: 'true' },
+      { id: 'false', label: 'false' },
+    ],
+  },
 };
 
 export const DEFAULT_RETRY = { maxRetries: 2, retryDelayMs: 1000 };

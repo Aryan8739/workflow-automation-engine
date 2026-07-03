@@ -8,6 +8,7 @@ const statusColors = {
   retrying: 'bg-[#f59e0b] animate-ping',
   done: 'bg-[#22c55e] animate-flash-green',
   failed: 'bg-[#ef4444]',
+  skipped: 'bg-[#555]',
 };
 
 // One component for every node type — visuals differ only by the metadata
@@ -20,7 +21,7 @@ export default function BaseNode({ id, type, data }) {
 
   return (
     <div
-      className="bg-[#111] border border-[#222] rounded-lg min-w-[200px] h-[80px] shadow-lg flex cursor-pointer relative"
+      className={`bg-[#111] border border-[#222] rounded-lg min-w-[200px] h-[80px] shadow-lg flex cursor-pointer relative transition-opacity ${status === 'skipped' ? 'opacity-40' : ''}`}
       onClick={() => setSelectedNodeId(id)}
     >
       {/* Retry badge - positioned above the node */}
@@ -50,7 +51,28 @@ export default function BaseNode({ id, type, data }) {
       </div>
 
       <Handle type="target" position={Position.Left} className="w-2 h-2 !border-transparent" style={{ backgroundColor: meta.accent }} />
-      <Handle type="source" position={Position.Right} className="w-2 h-2 !border-transparent" style={{ backgroundColor: meta.accent }} />
+
+      {meta.sourceHandles ? (
+        meta.sourceHandles.map((h, i) => {
+          const top = `${((i + 1) * 100) / (meta.sourceHandles.length + 1)}%`;
+          return (
+            <Handle
+              key={h.id}
+              id={h.id}
+              type="source"
+              position={Position.Right}
+              style={{ top, backgroundColor: meta.accent }}
+              className="w-2 h-2 !border-transparent"
+            >
+              <span className="absolute right-3 -top-1.5 text-[8px] uppercase tracking-wider text-gray-400 pointer-events-none">
+                {h.label}
+              </span>
+            </Handle>
+          );
+        })
+      ) : (
+        <Handle type="source" position={Position.Right} className="w-2 h-2 !border-transparent" style={{ backgroundColor: meta.accent }} />
+      )}
     </div>
   );
 }
