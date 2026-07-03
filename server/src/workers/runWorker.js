@@ -1,8 +1,7 @@
 import { Worker } from 'bullmq';
 import Workflow from '../models/Workflow.js';
 import Run from '../models/Run.js';
-import dagExecutor from '../engine/dagExecutor.js';
-import nodeRunner from '../engine/nodeRunner.js';
+import executeGraph from '../engine/executeGraph.js';
 import socketEmitter from '../socket/emitter.js';
 import connection from '../queues/connection.js';
 
@@ -25,17 +24,7 @@ const runWorker = new Worker('runs', async (job) => {
   await run.save();
 
   try {
-    const sortedNodeIds = dagExecutor(workflow);
-
-    //lookup map for nodes
-    const nodeMap = new Map();
-    workflow.nodes.forEach(n => nodeMap.set(n.id, n));
-
-    let currentInput = {};
-    for (const nodeId of sortedNodeIds) {
-      const node = nodeMap.get(nodeId);
-      currentInput = await nodeRunner(node, currentInput, runId, socketEmitter);
-    }
+    await executeGraph(workflow, runId, socketEmitter);
 
     run.status = 'completed';
     run.completedAt = new Date();
