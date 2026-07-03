@@ -1,22 +1,21 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ReactFlow,
   MiniMap,
   Background,
-  useNodesState,
-  useEdgesState,
   addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
   useViewport,
   useReactFlow,
   ReactFlowProvider
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import HttpNode from './nodes/HttpNode';
-import TransformNode from './nodes/TransformNode';
-import DelayNode from './nodes/DelayNode';
+import BaseNode from './nodes/BaseNode';
 import useWorkflowStore from '../../store/workflowStore';
 import RunHistory from '../history/RunHistory';
+import { NODE_TYPES, DEFAULT_RETRY } from '../../lib/nodeTypes';
 
 function ZoomCapsule() {
   const { zoom } = useViewport();
@@ -86,11 +85,21 @@ function WorkflowCanvasInner() {
   const { nodes, edges, setNodes, setEdges, setSelectedNodeId } = useWorkflowStore();
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const nodeTypes = useMemo(() => ({
-    http: HttpNode,
-    transform: TransformNode,
-    delay: DelayNode
-  }), []);
+  // Every type renders through BaseNode; differences come from NODE_TYPES.
+  const nodeTypes = useMemo(
+    () => Object.fromEntries(Object.keys(NODE_TYPES).map((type) => [type, BaseNode])),
+    []
+  );
+
+  const addNode = (type) => {
+    const newNode = {
+      id: `node-${Date.now()}`,
+      type,
+      position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
+      data: { label: type, config: { ...NODE_TYPES[type].defaults }, retry: { ...DEFAULT_RETRY } },
+    };
+    setNodes([...nodes, newNode]);
+  };
 
   return (
     <div className="w-full h-full relative bg-[#080808]">
@@ -109,48 +118,18 @@ function WorkflowCanvasInner() {
           >
             History
           </button>
-          <button 
-            onClick={() => {
-              const newNode = {
-                id: `node-${Date.now()}`,
-                type: 'http',
-                position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
-                data: { label: 'http', config: { method: 'GET', url: '' }, retry: { maxRetries: 2, retryDelayMs: 1000 } }
-              };
-              setNodes([...nodes, newNode]);
-            }}
-            className="border border-[#222] hover:border-[#2563eb] hover:bg-[#2563eb]/10 text-[#2563eb] px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1"
-          >
-            <span>+ HTTP</span>
-          </button>
-          <button 
-            onClick={() => {
-              const newNode = {
-                id: `node-${Date.now()}`,
-                type: 'transform',
-                position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
-                data: { label: 'transform', config: { code: '' }, retry: { maxRetries: 2, retryDelayMs: 1000 } }
-              };
-              setNodes([...nodes, newNode]);
-            }}
-            className="border border-[#222] hover:border-[#7c3aed] hover:bg-[#7c3aed]/10 text-[#7c3aed] px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1"
-          >
-            <span>+ Transform</span>
-          </button>
-          <button 
-            onClick={() => {
-              const newNode = {
-                id: `node-${Date.now()}`,
-                type: 'delay',
-                position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
-                data: { label: 'delay', config: { ms: 1000 }, retry: { maxRetries: 2, retryDelayMs: 1000 } }
-              };
-              setNodes([...nodes, newNode]);
-            }}
-            className="border border-[#222] hover:border-[#d97706] hover:bg-[#d97706]/10 text-[#d97706] px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1"
-          >
-            <span>+ Delay</span>
-          </button>
+          {Object.entries(NODE_TYPES).map(([type, meta]) => (
+            <button
+              key={type}
+              onClick={() => addNode(type)}
+              style={{ color: meta.accent }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = meta.accent; e.currentTarget.style.backgroundColor = `${meta.accent}1a`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#222'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+              className="border border-[#222] px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1"
+            >
+              <span>+ {meta.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -158,16 +137,8 @@ function WorkflowCanvasInner() {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={(changes) => {
-            import('@xyflow/react').then(({ applyNodeChanges }) => {
-              setNodes(applyNodeChanges(changes, nodes));
-            });
-          }}
-          onEdgesChange={(changes) => {
-            import('@xyflow/react').then(({ applyEdgeChanges }) => {
-              setEdges(applyEdgeChanges(changes, edges));
-            });
-          }}
+          onNodesChange={(changes) => setNodes(applyNodeChanges(changes, nodes))}
+          onEdgesChange={(changes) => setEdges(applyEdgeChanges(changes, edges))}
           onConnect={(params) => setEdges(addEdge({ ...params, animated: true, style: { strokeDasharray: '4 4' } }, edges))}
           onPaneClick={() => setSelectedNodeId(null)}
           nodeTypes={nodeTypes}
@@ -176,15 +147,8 @@ function WorkflowCanvasInner() {
           className="bg-[#1a1a1a]"
         >
           <Background color="#2a2a2a" gap={24} size={1.5} />
-          <MiniMap 
-            nodeColor={(node) => {
-              switch (node.type) {
-                case 'http': return '#3b82f6';
-                case 'transform': return '#8b5cf6';
-                case 'delay': return '#f59e0b';
-                default: return '#eee';
-              }
-            }}
+          <MiniMap
+            nodeColor={(node) => NODE_TYPES[node.type]?.accent || '#eee'}
             className="!bg-[#1a1a1a] !border-[#333]"
             maskColor="rgba(0, 0, 0, 0.7)"
           />
