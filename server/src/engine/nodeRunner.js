@@ -2,11 +2,13 @@ import NodeLog from '../models/NodeLog.js';
 import httpHandler from './handlers/httpHandler.js';
 import transformHandler from './handlers/transformHandler.js';
 import delayHandler from './handlers/delayHandler.js';
+import conditionHandler from './handlers/conditionHandler.js';
 
 const handlers = {
   http: httpHandler,
   transform: transformHandler,
-  delay: delayHandler
+  delay: delayHandler,
+  condition: conditionHandler
 };
 
 async function nodeRunner(node, inputData, runId, emitter) {

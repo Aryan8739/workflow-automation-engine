@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const nodeSchema = new mongoose.Schema({
   id: { type: String, required: true },
-  type: { type: String, enum: ['http', 'transform', 'delay'], required: true },
+  type: { type: String, enum: ['http', 'transform', 'delay', 'condition'], required: true },
   config: { type: mongoose.Schema.Types.Mixed, default: {} },
   retry: {
     maxRetries: { type: Number, default: 2 },
@@ -16,7 +16,8 @@ const nodeSchema = new mongoose.Schema({
 
 const edgeSchema = new mongoose.Schema({
   source: { type: String, required: true },
-  target: { type: String, required: true }
+  target: { type: String, required: true },
+  sourceHandle: { type: String, default: null }
 }, { _id: false });
 
 const workflowSchema = new mongoose.Schema({
