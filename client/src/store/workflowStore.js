@@ -60,7 +60,7 @@ const useWorkflowStore = create((set) => ({
     nodeStatuses: {},
     nodeLogs: {},
     logs: [],
-    isRunning: true
+    isRunning: false
   })
 }));
 
