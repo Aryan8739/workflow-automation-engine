@@ -1,16 +1,29 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import useAuthStore from '../store/authStore';
 
-// Form UI only in 6a; wired to the auth backend in 6b.
 export default function Auth() {
+  const navigate = useNavigate();
+  const { login, signup } = useAuthStore();
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('Auth backend is wired up in the next step.');
+    setError('');
+    setBusy(true);
+    try {
+      if (mode === 'login') await login(email, password);
+      else await signup(email, password);
+      navigate('/app');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -58,8 +71,12 @@ export default function Auth() {
 
             {error && <p className="text-xs text-red-400">{error}</p>}
 
-            <button type="submit" className="w-full py-2.5 rounded-full text-sm font-bold bg-[#2563eb] text-white hover:bg-blue-500 transition">
-              {mode === 'login' ? 'Sign in' : 'Create account'}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full py-2.5 rounded-full text-sm font-bold bg-[#2563eb] text-white hover:bg-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
             </button>
           </form>
 

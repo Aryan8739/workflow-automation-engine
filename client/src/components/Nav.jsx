@@ -1,6 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import useAuthStore from '../store/authStore';
 
 export default function Nav() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
   return (
     <header className="w-full h-14 border-b border-[#1f1f1f] bg-[#0b0b0b]/80 backdrop-blur sticky top-0 z-50">
       <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
@@ -13,7 +17,21 @@ export default function Nav() {
 
         <nav className="flex items-center space-x-2">
           <Link to="/docs" className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition">Docs</Link>
-          <Link to="/login" className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition">Sign in</Link>
+
+          {user ? (
+            <>
+              <span className="px-3 py-1.5 text-xs text-gray-500 hidden sm:inline">{user.email}</span>
+              <button
+                onClick={() => { logout(); navigate('/'); }}
+                className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition">Sign in</Link>
+          )}
+
           <Link
             to="/app"
             className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#2563eb] text-white hover:bg-blue-500 transition"
