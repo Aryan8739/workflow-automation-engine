@@ -144,6 +144,7 @@ function WorkflowCanvasInner() {
           nodeTypes={nodeTypes}
           defaultEdgeOptions={{ animated: true, style: { strokeDasharray: '4 4' } }}
           defaultViewport={{ x: 0, y: 60, zoom: 0.8 }}
+          proOptions={{ hideAttribution: true }}
           className="bg-[#1a1a1a]"
         >
           <Background color="#2a2a2a" gap={24} size={1.5} />

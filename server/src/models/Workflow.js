@@ -22,6 +22,7 @@ const edgeSchema = new mongoose.Schema({
 
 const workflowSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   nodes: [nodeSchema],
   edges: [edgeSchema],
   createdAt: { type: Date, default: Date.now }

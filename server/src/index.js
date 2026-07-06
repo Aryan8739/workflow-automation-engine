@@ -8,6 +8,7 @@ import cors from 'cors';
 import emitter from './socket/emitter.js';
 import workflowsRouter from './routes/workflows.js';
 import runsRouter from './routes/runs.js';
+import authRouter from './routes/auth.js';
 
 // Import the worker so it starts listening to the queue
 import './workers/runWorker.js';
@@ -21,6 +22,7 @@ app.use(cors({ origin: allowedOrigin, credentials: true }));
 app.use(express.json());
 
 // Routes
+app.use('/api/auth', authRouter);
 app.use('/api/workflows', workflowsRouter);
 app.use('/api/runs', runsRouter);
 

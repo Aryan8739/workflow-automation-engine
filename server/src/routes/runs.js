@@ -2,13 +2,21 @@ import express from 'express';
 const router = express.Router();
 import Run from '../models/Run.js';
 import NodeLog from '../models/NodeLog.js';
+import Workflow from '../models/Workflow.js';
 import runQueue from '../queues/runQueue.js';
+import { optionalAuth } from '../middleware/auth.js';
 
 // POST /api/runs/:workflowId - trigger a run
-router.post('/:workflowId', async (req, res) => {
+router.post('/:workflowId', optionalAuth, async (req, res) => {
   try {
     const { workflowId } = req.params;
-    
+
+    const workflow = await Workflow.findById(workflowId).select('owner');
+    if (!workflow) return res.status(404).json({ error: 'Workflow not found' });
+    if (workflow.owner && (!req.userId || workflow.owner.toString() !== req.userId)) {
+      return res.status(403).json({ error: 'Not authorized to run this workflow' });
+    }
+
     const run = new Run({ workflowId });
     await run.save();
 

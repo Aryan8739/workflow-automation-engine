@@ -1,28 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import useWorkflowStore from '../store/workflowStore';
 
 export function useRunSocket(runId) {
-  const { setNodeStatus, setNodeLog, addLog, setIsRunning } = useWorkflowStore();
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (!runId) return;
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5050');
+    // Prevent duplicate connections for the same runId
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+
+    const { setNodeStatus, setNodeLog, addLog, setIsRunning } = useWorkflowStore.getState();
+
+    let disposed = false;
+
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5050', {
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      transports: ['websocket', 'polling'],
+    });
+
+    socketRef.current = socket;
 
     socket.on('connect', () => {
-      socket.emit('joinRun', runId);
+      if (!disposed) socket.emit('joinRun', runId);
     });
 
     socket.on('workflow-completed', () => {
-      setIsRunning(false);
+      if (!disposed) {
+        setIsRunning(false);
+        socket.disconnect();
+      }
     });
 
     socket.on('workflow-failed', () => {
-      setIsRunning(false);
+      if (!disposed) {
+        setIsRunning(false);
+        socket.disconnect();
+      }
     });
 
     socket.on('nodeEvent', (data) => {
+      if (disposed) return;
+
       setNodeStatus(data.nodeId, data.status);
 
       if (data.status === 'retrying') {
@@ -53,7 +77,9 @@ export function useRunSocket(runId) {
     });
 
     return () => {
+      disposed = true;
       socket.disconnect();
+      socketRef.current = null;
     };
   }, [runId]);
 }
