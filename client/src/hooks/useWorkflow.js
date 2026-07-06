@@ -50,35 +50,70 @@ export function useWorkflow() {
     loadWorkflow();
   }, [token, setWorkflowId, setNodes, setEdges]);
 
-  // Custom debounce for saving
   const timeoutRef = useRef(null);
+  const pendingRef = useRef(null);
+
+  const flushPending = useCallback(() => {
+    if (!pendingRef.current) return;
+    const { workflowId: id, payload } = pendingRef.current;
+    pendingRef.current = null;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    const token = localStorage.getItem('wfe_token');
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+    fetch(`${baseURL}/workflows/${id}`, {
+      method: 'PUT',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    }).catch((err) => console.error('Failed to flush workflow save:', err));
+  }, []);
 
   const saveWorkflow = useCallback((newNodes, newEdges) => {
-    if (!workflowId || isGuest) return; // guest edits are sandboxed — never persisted
+    if (!workflowId || isGuest) return;
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
+    const payload = {
+      nodes: newNodes.map(toApiNode),
+      edges: newEdges.map(toApiEdge),
+    };
+    pendingRef.current = { workflowId, payload };
+
     timeoutRef.current = setTimeout(async () => {
       try {
-        const payload = {
-          nodes: newNodes.map(toApiNode),
-          edges: newEdges.map(toApiEdge),
-        };
         await api.put(`/workflows/${workflowId}`, payload);
+        pendingRef.current = null;
       } catch (err) {
         console.error('Failed to save workflow:', err);
       }
     }, 800);
   }, [workflowId, isGuest]);
 
-  // Trigger save whenever nodes or edges change, but only after initial load
   useEffect(() => {
     if (initialLoadDone.current && workflowId) {
       saveWorkflow(nodes, edges);
     }
   }, [nodes, edges, workflowId, saveWorkflow]);
+
+  useEffect(() => {
+    const handleHide = () => flushPending();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flushPending();
+    };
+    window.addEventListener('beforeunload', handleHide);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', handleHide);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      flushPending();
+    };
+  }, [flushPending]);
 
   return { workflowId, loading, isGuest };
 }

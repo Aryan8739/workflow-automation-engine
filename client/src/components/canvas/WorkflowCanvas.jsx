@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ReactFlow,
   MiniMap,
@@ -14,6 +15,7 @@ import '@xyflow/react/dist/style.css';
 
 import BaseNode from './nodes/BaseNode';
 import useWorkflowStore from '../../store/workflowStore';
+import useAuthStore from '../../store/authStore';
 import RunHistory from '../history/RunHistory';
 import { NODE_TYPES, DEFAULT_RETRY } from '../../lib/nodeTypes';
 
@@ -81,6 +83,51 @@ function ZoomCapsule() {
   );
 }
 
+function UserMenu() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!user) {
+    return (
+      <Link to="/login" className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition">Sign in</Link>
+    );
+  }
+
+  const initial = user.email.charAt(0).toUpperCase();
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-7 h-7 rounded-full bg-[#2563eb]/20 border border-[#2563eb]/40 text-[#93c5fd] text-xs font-bold flex items-center justify-center hover:bg-[#2563eb]/30 transition"
+      >
+        {initial}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-9 w-48 bg-[#141414] border border-[#2a2a2a] rounded-lg shadow-lg py-1 z-20">
+          <p className="px-3 py-1.5 text-xs text-gray-500 truncate">{user.email}</p>
+          <button
+            onClick={() => { logout(); navigate('/'); }}
+            className="w-full text-left px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-[#1f1f1f] transition"
+          >
+            Logout
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WorkflowCanvasInner() {
   const { nodes, edges, setNodes, setEdges, setSelectedNodeId } = useWorkflowStore();
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -105,12 +152,12 @@ function WorkflowCanvasInner() {
     <div className="w-full h-full relative bg-[#080808]">
       {/* Toolbar */}
       <div className="absolute top-0 left-0 w-full h-[52px] bg-[#0f0f0f] border-b border-[#1f1f1f] flex items-center justify-between px-4 z-10">
-        <div className="flex items-center space-x-2">
+        <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
           <div className="w-4 h-4 border border-gray-500 rounded-sm rotate-45 flex items-center justify-center">
             <div className="w-1 h-1 bg-gray-400 rounded-full" />
           </div>
           <h1 className="text-xs font-medium uppercase tracking-widest text-gray-400">Workflow Engine</h1>
-        </div>
+        </Link>
         <div className="flex space-x-2">
           <button 
             onClick={() => setHistoryOpen(!historyOpen)}
@@ -130,6 +177,9 @@ function WorkflowCanvasInner() {
               <span>+ {meta.label}</span>
             </button>
           ))}
+          <div className="flex items-center ml-4 pl-4 border-l border-[#222]">
+            <UserMenu />
+          </div>
         </div>
       </div>
 
